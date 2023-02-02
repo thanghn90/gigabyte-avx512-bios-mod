@@ -17,40 +17,58 @@ Now that you have a bios with "save bios" function in Q-flash utility, go ahead 
 
 After you're done tweaking the bios to your liking, it's time to save it to an USB drive. Again, make sure to format the USB drive as FAT32, and plug it in to the board before turning your computer on. Go to Q-Flash Utility (F8), then choose the "Save Bios" option, which should be the second one from top down on the right panel. Next, give the output file name for the bios backup on the lower right text field. Let's say it's "f2_bak.bin". Start the backup. Once it's finish, you can reboot. Again, sorry for no screenshots.
 
-The next step is to mod the backed-up bios image with all the "puzzle pieces" from this thread. I'll try to credit the right person for a specific "puzzle piece". If I miss anyone, feel free to alert me.
+The next step is to mod the backed-up bios image with all the "puzzle pieces" from this thread. I'll try to credit the right person on winraid website for a specific "puzzle piece". If I miss anyone, feel free to alert me.
+
 Run MMTool.exe. Click Load Image button, then change "File Type" to "All Files (*.*)" and browse to "f2_bak.bin", the backed up bios image.
-![mmtool_load|690x411](upload://iJ8RxNBhQjeIdbtL2AqAafC21qR.png)
+![alt text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_load.PNG)
+
 After you load the image file, there should be a whole bunch of rows in the lower section. What you want to do now is to extract two modules in UNCOMPRESSED mode (thanks @pr0ton): SiInitFsp and GenericComponentPeiEntry (thanks @RussianE39). The module name is in the column "FileName" in the lower table. Browse and give the output module a name, and hit extract, once module at a time. I'll keep it simple: "s.module" for SiInitFsp and "g.module" for GenericComponentPeiEntry:
-![mmtool_s_module|690x361](upload://X9jYgkwskJytsInNDng7LfJ7QS.png)
-![mmtool_g_module|690x391](upload://y0H5BpqQD0vFwoRp0SbZ6pXnDnr.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_g_module.PNG)
+
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_s_module.PNG)
+
 
 Once you get the modules extracted, it's time to do the hardcore modification using hex editor HxD. Double-click on HxD64.exe after you install it, then open g.module (I'll try to follow the order in @RussianE39 post).
-![hxd_g_module|690x284](upload://dcMzVoMRnGUOTWEJDuVowZqUtEw.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/hxd_g_module.PNG)
+
 Here is the juicy part: hit Ctrl+F, go to tab "Hex-value", search for pattern "83E0038365F4" (thanks @ptrang) in ALL direction (note: it's case-sensitive, but not space-sensitive: you can add spaces in between two-hex values, so "83 E0 03 83 65 F4" works):
-![hxd_g_module_search|690x308](upload://uSACjzjLGivMa5N9ZfQ8BCAKum.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/hxd_g_module_search.PNG)
+
 Then change the "03" to "00", so the resulting hex string should be "83 E0 00 83 65 F4", and SAVE IT:
-![hxd_g_module_modify|690x337](upload://tloqjHIbBY2XG3LXbe5cXyoMQnD.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/hxd_g_module_modify.PNG)
+
 We're done with g.module. Close it if you want.
 
 Next, still in HxD, open s.module, and search for pattern "1A 24 01 8B E5" (again, make sure it's Hex-value tab, and search in all direction, case-sensitive!).
-![hxd_s_module_search|690x304](upload://1DuujdpmSbDXMfj7tKpXjMIxlp5.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/hxd_s_module_search.PNG)
+
 Change "24 01" to "B0 00" (thanks @RussianE39, as well as @intruder16 and @Sweet_Kitten for bringing up and explaining what the hell it means):
-![hxd_s_module_modify|408x253](upload://lpK6Rw7vLbuQVe2lnYPwlKT9lv3.png)
+
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/hxd_s_module_modify.PNG)
+
 Save it and close HxD. We're done with hex editing.
 
+
 Now, back to MMtool. We've modified the two modules, so it's time to replace them back into the bios image. To do so, (assuming you still have MMTool opened and loaded with the backed up bios image), go to "Replace" tab. Browse to "g.module" (the modified one, if you save it as a different file in HxD). Highlight the corresponding module to be replaced, which is GenericComponentPeiEntry. Then hit "Replace" button:
-![mmtool_g_module_replace|690x375](upload://qJr4hhSvCvXlEPdQyMZvLQnaYPK.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_g_module_replace.PNG)
+
 Now, still in "Replace" tab, browse to the modified s.module. Select component SiInitFsp, then click "Replace" button:
-![mmtool_s_module_replace|690x395](upload://xe4Ku4rRb0XbKtQmA1QzPtX78gO.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_s_module_replace.PNG)
 
 The last step is to deal with microcode 15 patch. Still in MMTool, go to "CPU Patch" tab. There should be several items on the lower table. Look at the column "Update Revision". That's the microcode patch number. First, you need to insert microcode 15 patch. To do so, browse to the m_03_90672_00000015.pdb. Then choose "Insert a patch data", and hit Apply. The microcode 15 patch should be added to the end of the lower table:
-![mmtool_insert_microcode_15|690x424](upload://AdQqcJz09XNn3DZLWyCdPOYBPwL.png)
-Here is the important step that is missing in almost all guide so far: you need to remove ALL microcode patches with revision higher than 15. In my case, I have to remove 17, 19, 1A, 1E, and 23. To do so, select the row corresponding to the higher-revision patch, then choose "Delete a patch data" and hit Apply button:
-![mmtool_delete_higher_microcode_patches|690x389](upload://m2XEcqEGIuXhRuiqAtOXtq7EtZ5.png)
+
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_insert_microcode_15.PNG)
+
+Here is the important step that is missing in almost all other guides so far: you need to remove ALL microcode patches with revision higher than 15. In my case, I have to remove 17, 19, 1A, 1E, and 23. To do so, select the row corresponding to the higher-revision patch, then choose "Delete a patch data" and hit Apply button:
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_delete_higher_microcode_patches.PNG)
+
 After you finish deleting all higher microcode patches, make sure microcode 15 is the highest revision of all remaining microcode patches:
-![mmtool_microcode_table_result|690x96](upload://m5540PZu1VnFbsV6yF1tycCOwS1.png)
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_microcode_table_result.PNG)
+
 
 Don't forget to hit "Save image as..." button to save the modded bios image. Let's call it "f2_avx512.fd" (it won't allow any other extension).
+![alt_text](https://github.com/thanghn90/gigabyte-avx512-bios-mod/blob/main/mmtool_save_image_as.PNG)
+
 
 The last step is to copy and rename "f2_avx512.fd" to your USB stick as "gigabyte.bin", and use Q-flash Plus button method to flash that modded bios image to your board (thanks @RussianE39 and @pr0ton, I can confirm Q-flash utility won't work, and only flashing through the Q-flash Plus button works).
 
